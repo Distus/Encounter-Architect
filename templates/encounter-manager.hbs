@@ -1,0 +1,37 @@
+<div class="ea-manager">
+  <div class="ea-manager-header">
+    <button class="ea-new-encounter"><i class="fas fa-plus"></i> New Encounter</button>
+    <input type="text" class="ea-search-input" placeholder="Search encounters…" />
+  </div>
+
+  {{#if isEmpty}}
+  <div class="ea-empty-state">
+    <i class="fas fa-swords ea-empty-icon"></i>
+    <p>No saved encounters yet.</p>
+    <p>Click <strong>New Encounter</strong> to get started.</p>
+  </div>
+  {{else}}
+  <div class="ea-encounter-list">
+    {{#each encounters}}
+    <div class="ea-encounter-row" data-id="{{this.id}}" data-name="{{this.name}}" data-tags="{{this.tags}}">
+      <div class="ea-encounter-info">
+        <span class="ea-encounter-name-label">{{this.name}}</span>
+        <span class="ea-encounter-meta">
+          {{this.partyMembers.length}} party · {{this.threats.length}} threats
+        </span>
+        {{#if this.tags.length}}
+        <span class="ea-encounter-tags">
+          {{#each this.tags}}<span class="ea-tag">{{this}}</span>{{/each}}
+        </span>
+        {{/if}}
+      </div>
+      <div class="ea-encounter-actions">
+        <button class="ea-open-encounter" title="Open"><i class="fas fa-edit"></i></button>
+        <button class="ea-duplicate-encounter" title="Duplicate"><i class="fas fa-copy"></i></button>
+        <button class="ea-delete-encounter" title="Delete"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+    {{/each}}
+  </div>
+  {{/if}}
+</div>

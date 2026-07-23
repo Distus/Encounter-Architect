@@ -1,0 +1,34 @@
+{
+  "id": "encounter-architect",
+  "title": "Encounter Architect",
+  "description": "Visual encounter builder and analysis tool for D&D 5e (2024). Drag party members and enemies onto a split-panel interface for live difficulty ratings, action economy analysis, threat assessment, and tactical warnings based on actual character sheets and stat blocks.",
+  "version": "0.1.0",
+  "authors": [
+    {
+      "name": "Shawn Preston",
+      "url": "https://github.com/Distus"
+    }
+  ],
+  "compatibility": {
+    "minimum": "11",
+    "verified": "14"
+  },
+  "system": "dnd5e",
+  "esmodules": [
+    "scripts/module.js"
+  ],
+  "styles": [
+    "styles/encounter-architect.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "url": "https://github.com/Distus/encounter-architect",
+  "manifest": "https://github.com/Distus/encounter-architect/releases/latest/download/module.json",
+  "download": "https://github.com/Distus/encounter-architect/releases/download/v0.1.0/encounter-architect.zip",
+  "flags": {}
+}

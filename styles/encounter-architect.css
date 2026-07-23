@@ -1,0 +1,397 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Encounter Architect — Stylesheet
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Manager ─────────────────────────────────────────────────────────── */
+
+.encounter-manager .ea-manager-header {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.encounter-manager .ea-search-input {
+  flex: 1;
+}
+
+.encounter-manager .ea-new-encounter {
+  white-space: nowrap;
+}
+
+.encounter-manager .ea-encounter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.encounter-manager .ea-encounter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border-light-tertiary, #ccc);
+  border-radius: 4px;
+  background: var(--color-bg, rgba(255,255,255,0.05));
+}
+
+.encounter-manager .ea-encounter-row:hover {
+  background: var(--color-bg-option, rgba(255,255,255,0.1));
+}
+
+.encounter-manager .ea-encounter-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.encounter-manager .ea-encounter-name-label {
+  font-weight: bold;
+}
+
+.encounter-manager .ea-encounter-meta {
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+
+.encounter-manager .ea-encounter-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.encounter-manager .ea-encounter-actions button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  line-height: 28px;
+  text-align: center;
+}
+
+.encounter-manager .ea-empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  opacity: 0.6;
+}
+
+.encounter-manager .ea-empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+/* ── Builder ─────────────────────────────────────────────────────────── */
+
+.encounter-builder .ea-builder {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.encounter-builder .ea-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--color-border-light-tertiary, #ccc);
+  margin-bottom: 8px;
+}
+
+.encounter-builder .ea-encounter-name {
+  font-size: 1.1em;
+  font-weight: bold;
+  flex: 1;
+}
+
+.encounter-builder .ea-tags-input {
+  flex: 0.6;
+  font-size: 0.9em;
+}
+
+.encounter-builder .ea-header-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.encounter-builder .ea-header-buttons button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+}
+
+/* ── Three-Panel Layout ──────────────────────────────────────────────── */
+
+.encounter-builder .ea-panels {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.encounter-builder .ea-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--color-border-light-tertiary, #ccc);
+  border-radius: 4px;
+}
+
+.encounter-builder .ea-panel h3 {
+  margin: 0 0 6px 0;
+  font-size: 1em;
+  border-bottom: 1px solid var(--color-border-light-tertiary, #ccc);
+  padding-bottom: 4px;
+}
+
+.encounter-builder .ea-analysis-panel {
+  flex: 1.4;
+}
+
+/* ── Resource State ──────────────────────────────────────────────────── */
+
+.ea-resource-selector {
+  margin-bottom: 8px;
+}
+
+.ea-resource-selector label {
+  font-weight: bold;
+  font-size: 0.85em;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.ea-resource-selector select {
+  width: 100%;
+  font-size: 0.9em;
+}
+
+/* ── Creature Cards ──────────────────────────────────────────────────── */
+
+.ea-creature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.ea-creature-card {
+  border: 1px solid var(--color-border-light-tertiary, #ccc);
+  border-radius: 3px;
+  padding: 4px 6px;
+  font-size: 0.9em;
+}
+
+.ea-creature-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ea-creature-name {
+  font-weight: bold;
+  flex: 1;
+}
+
+.ea-creature-stats {
+  font-size: 0.85em;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+.ea-creature-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ea-creature-buttons button {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  line-height: 22px;
+  text-align: center;
+  font-size: 0.8em;
+}
+
+.ea-threat-qty {
+  width: 40px;
+  text-align: center;
+  padding: 1px;
+}
+
+.ea-lair-label {
+  font-size: 0.8em;
+  white-space: nowrap;
+}
+
+.ea-detail {
+  padding: 4px 0 0 8px;
+  font-size: 0.85em;
+}
+
+.ea-detail-row {
+  margin: 2px 0;
+}
+
+.ea-hidden {
+  display: none;
+}
+
+/* ── Tags ────────────────────────────────────────────────────────────── */
+
+.ea-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--color-bg-btn, rgba(255,255,255,0.1));
+  font-size: 0.8em;
+  margin: 1px;
+}
+
+.ea-tag-small {
+  font-size: 0.75em;
+  padding: 0 4px;
+}
+
+/* ── Drop Hint ───────────────────────────────────────────────────────── */
+
+.ea-drop-hint {
+  text-align: center;
+  padding: 12px 8px;
+  border: 2px dashed var(--color-border-light-tertiary, #ccc);
+  border-radius: 4px;
+  opacity: 0.5;
+  font-size: 0.85em;
+  margin-top: 6px;
+}
+
+/* ── Panel Summaries ─────────────────────────────────────────────────── */
+
+.ea-panel-summary {
+  font-size: 0.8em;
+  padding: 6px 4px;
+  border-top: 1px solid var(--color-border-light-tertiary, #ccc);
+  margin-top: 6px;
+  opacity: 0.8;
+}
+
+/* ── Analysis Dashboard ──────────────────────────────────────────────── */
+
+.ea-difficulty-gauge {
+  text-align: center;
+  padding: 8px;
+  margin-bottom: 8px;
+  border: 1px solid var(--color-border-light-tertiary, #ccc);
+  border-radius: 4px;
+}
+
+.ea-difficulty-label {
+  font-size: 1.8em;
+  font-weight: bold;
+}
+
+.ea-xp-display {
+  font-size: 0.9em;
+  margin-top: 4px;
+}
+
+.ea-xp-thresholds {
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
+.ea-difficulty-note {
+  font-size: 0.8em;
+  opacity: 0.6;
+  margin-top: 4px;
+}
+
+.ea-section-title {
+  font-weight: bold;
+  font-size: 0.9em;
+  margin: 8px 0 4px 0;
+  border-bottom: 1px solid var(--color-border-light-tertiary, #ccc);
+  padding-bottom: 2px;
+}
+
+.ea-action-economy,
+.ea-round-estimate,
+.ea-quick-stats {
+  font-size: 0.9em;
+  margin-bottom: 6px;
+}
+
+.ea-verdict {
+  font-weight: bold;
+  margin: 2px 0;
+}
+
+.ea-adjustment {
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+
+.ea-round-display {
+  font-size: 1.1em;
+  margin: 4px 0;
+}
+
+.ea-round-detail,
+.ea-attrition {
+  font-size: 0.85em;
+}
+
+.ea-stat-row {
+  font-size: 0.85em;
+  margin: 2px 0;
+}
+
+/* ── Warnings ────────────────────────────────────────────────────────── */
+
+.ea-warnings {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ea-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 4px 6px;
+  margin: 2px 0;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+.ea-warning i {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.ea-warning-danger {
+  background: rgba(244, 67, 54, 0.15);
+  border-left: 3px solid #F44336;
+}
+
+.ea-warning-danger i { color: #F44336; }
+
+.ea-warning-caution {
+  background: rgba(255, 193, 7, 0.15);
+  border-left: 3px solid #FFC107;
+}
+
+.ea-warning-caution i { color: #FFC107; }
+
+.ea-warning-info {
+  background: rgba(33, 150, 243, 0.12);
+  border-left: 3px solid #2196F3;
+}
+
+.ea-warning-info i { color: #2196F3; }
+
+/* ── Add Monster Button ──────────────────────────────────────────────── */
+
+.ea-add-monster {
+  width: 100%;
+  margin-bottom: 6px;
+}

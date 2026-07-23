@@ -1,0 +1,7 @@
+{
+  "encounter-architect.title": "Encounter Architect",
+  "encounter-architect.settings.analysisDepth.name": "Analysis Depth",
+  "encounter-architect.settings.autoLoadParty.name": "Auto-Load Party Members",
+  "encounter-architect.settings.showXPValues.name": "Show XP Values",
+  "encounter-architect.settings.minutesPerRound.name": "Minutes per Combat Round"
+}
