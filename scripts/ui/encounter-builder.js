@@ -44,7 +44,10 @@ export class EncounterBuilder extends Application {
       width: 960,
       height: 700,
       resizable: true,
-      dragDrop: [{ dropSelector: ".ea-party-panel, .ea-threats-panel" }]
+      dragDrop: [
+        { dropSelector: ".ea-party-drop-zone" },
+        { dropSelector: ".ea-threats-drop-zone" }
+      ]
     });
   }
 
@@ -60,12 +63,13 @@ export class EncounterBuilder extends Application {
   }
 
   async getData() {
-    const enc = this._encounter;
+    let enc = this._encounter;
     if (!enc) return { error: true };
 
     // Auto-load party if setting enabled and party is empty
     if (game.settings.get(MODULE_ID, "autoLoadParty") && enc.partyMembers.length === 0) {
       await this._autoLoadParty();
+      enc = this._encounter; // re-read after save
     }
 
     // Build live data from stored actor IDs
@@ -75,21 +79,87 @@ export class EncounterBuilder extends Application {
     // Run analysis
     const depth = game.settings.get(MODULE_ID, "analysisDepth");
     const minutesPerRound = game.settings.get(MODULE_ID, "minutesPerRound");
-    this._analysis = analyzeEncounter(
-      this._partyData,
-      this._threatData,
-      enc.partyResourceState ?? 1.0,
-      { depth, minutesPerRound }
-    );
+
+    let analysis = {};
+    try {
+      analysis = analyzeEncounter(
+        this._partyData,
+        this._threatData,
+        enc.partyResourceState ?? 1.0,
+        { depth, minutesPerRound }
+      );
+    } catch (err) {
+      console.error("Encounter Architect | Analysis error:", err);
+    }
+    this._analysis = analysis;
+
+    // Pre-compute resource state selection flags (no eq helper in Foundry HBS)
+    const rs = enc.partyResourceState ?? 1.0;
+
+    // Pre-compute warning icons
+    const warnings = (analysis.warnings ?? []).map(w => ({
+      ...w,
+      iconClass: w.severity === "danger"  ? "fa-exclamation-triangle"
+               : w.severity === "caution" ? "fa-exclamation-circle"
+               : "fa-info-circle"
+    }));
+
+    // Build display-ready threat list from live data
+    const threatDisplay = this._threatData.map((t, idx) => ({
+      ...t,
+      idx,
+      cr: t.cr ?? "?",
+      quantity: enc.threats[idx]?.quantity ?? t.quantity ?? 1,
+      hasLairActions: enc.threats[idx]?.hasLairActions ?? false,
+      displayTags: (t.threatTags ?? []).slice(0, 8)
+    }));
+
+    // Build display-ready party list
+    const partyDisplay = this._partyData.map(m => ({
+      ...m,
+      classDisplay: Object.entries(m.classes ?? {}).map(([c, l]) => `${c} ${l}`).join(", "),
+      dprDisplay: Math.round(m.damageCapabilities?.estimatedDPR ?? 0),
+      dmgTypeDisplay: (m.damageCapabilities?.primaryTypes ?? []).join(", ") || "—",
+      displayTags: (m.threatTags ?? []).slice(0, 8)
+    }));
+
+    // Difficulty display changed?
+    const rawDiff = analysis.xpDifficulty ?? "—";
+    const adjDiff = analysis.resourceAdjustedDifficulty ?? analysis.adjustedDifficulty ?? "—";
+    const difficultyChanged = rawDiff !== adjDiff;
+
+    // Round numbers for display
+    const quickStats = analysis.quickStats ? {
+      partyAvgAC: analysis.quickStats.partyAvgAC,
+      enemyAvgAC: analysis.quickStats.enemyAvgAC,
+      partyDPR: Math.round(analysis.quickStats.partyDPR ?? 0),
+      enemyDPR: Math.round(analysis.quickStats.enemyDPR ?? 0)
+    } : null;
 
     return {
       encounter: enc,
-      party: this._partyData,
-      threats: enc.threats ?? [],
-      analysis: this._analysis,
-      resourceState: enc.partyResourceState ?? 1.0,
+      party: partyDisplay,
+      threats: threatDisplay,
+      analysis,
+      warnings,
+      quickStats,
+      resourceState: rs,
+      rsFresh:       rs >= 1.0,
+      rsLightlyTaxed: rs >= 0.7 && rs < 1.0,
+      rsHalfSpent:    rs >= 0.4 && rs < 0.7,
+      rsFumes:        rs >= 0.2 && rs < 0.4,
+      rsCritical:     rs < 0.2,
       showXP: game.settings.get(MODULE_ID, "showXPValues"),
-      difficultyColor: this._difficultyColor(this._analysis.resourceAdjustedDifficulty ?? this._analysis.adjustedDifficulty)
+      difficultyColor: this._difficultyColor(adjDiff),
+      difficultyChanged,
+      rawDifficulty: rawDiff,
+      adjustedDifficulty: analysis.adjustedDifficulty ?? rawDiff,
+      finalDifficulty: adjDiff,
+      hasAnalysis: !!(analysis.xpBudget),
+      hasActionEconomy: !!(analysis.partyActions),
+      hasRounds: !!(analysis.estimatedRounds),
+      hasQuickStats: !!quickStats,
+      hasWarnings: warnings.length > 0
     };
   }
 
@@ -97,23 +167,33 @@ export class EncounterBuilder extends Application {
 
   _buildPartyData(members) {
     return (members ?? []).map(m => {
-      const actor = game.actors.get(m.actorId);
-      if (!actor) return { ...m, missing: true };
-      return readPartyMember(actor, m.isAlly ?? false);
-    }).filter(m => !m.missing);
+      try {
+        const actor = game.actors.get(m.actorId);
+        if (!actor) return null;
+        return readPartyMember(actor, m.isAlly ?? false);
+      } catch (err) {
+        console.error(`Encounter Architect | Error reading party member ${m.name}:`, err);
+        return null;
+      }
+    }).filter(Boolean);
   }
 
   _buildThreatData(threats) {
     return (threats ?? []).map(t => {
-      if (t.actorId) {
-        const actor = game.actors.get(t.actorId);
-        if (!actor) return { ...t, missing: true };
-        const data = readThreat(actor, t.quantity ?? 1);
-        data.hasLairActions = t.hasLairActions ?? false;
-        return data;
+      try {
+        if (t.actorId) {
+          const actor = game.actors.get(t.actorId);
+          if (!actor) return null;
+          const data = readThreat(actor, t.quantity ?? 1);
+          data.hasLairActions = t.hasLairActions ?? false;
+          return data;
+        }
+        return t; // manual entry
+      } catch (err) {
+        console.error(`Encounter Architect | Error reading threat ${t.name}:`, err);
+        return null;
       }
-      return t; // manual entry
-    }).filter(t => !t.missing);
+    }).filter(Boolean);
   }
 
   async _autoLoadParty() {
@@ -185,20 +265,13 @@ export class EncounterBuilder extends Application {
       this.render();
     });
 
-    // Add monster button (opens compendium browser)
+    // Add monster button
     html.find(".ea-add-monster").click(() => this._openMonsterSearch(html));
 
     // Toggle expandable details
     html.find(".ea-expand-toggle").click(ev => {
       const detail = ev.currentTarget.closest(".ea-creature-card").querySelector(".ea-detail");
       if (detail) detail.classList.toggle("ea-hidden");
-    });
-
-    // Collapse warning categories
-    html.find(".ea-warning-category-header").click(ev => {
-      const section = ev.currentTarget.nextElementSibling;
-      if (section) section.classList.toggle("ea-hidden");
-      ev.currentTarget.classList.toggle("ea-collapsed");
     });
 
     // Notes
@@ -211,7 +284,7 @@ export class EncounterBuilder extends Application {
       await this._saveEncounter(enc);
     });
 
-    // Save button (for explicit saves / name changes propagation)
+    // Save button
     html.find(".ea-save-btn").click(() => {
       ui.notifications.info("Encounter saved.");
     });
@@ -230,17 +303,28 @@ export class EncounterBuilder extends Application {
     let data;
     try {
       data = JSON.parse(event.dataTransfer.getData("text/plain"));
-    } catch { return; }
+    } catch {
+      return;
+    }
 
     if (data.type !== "Actor") return;
 
-    const actor = await fromUuid(data.uuid ?? `Actor.${data.id}`);
+    let actor;
+    try {
+      actor = await fromUuid(data.uuid ?? `Actor.${data.id}`);
+    } catch {
+      return;
+    }
     if (!actor) return;
 
     const enc = foundry.utils.deepClone(this._encounter);
-    const targetPanel = event.currentTarget.closest(".ea-party-panel, .ea-threats-panel");
 
-    if (targetPanel?.classList.contains("ea-party-panel")) {
+    // Determine which panel the drop landed on
+    const target = event.currentTarget;
+    const isPartyDrop = target?.classList?.contains("ea-party-drop-zone");
+    const isThreatDrop = target?.classList?.contains("ea-threats-drop-zone");
+
+    if (isPartyDrop) {
       // Add as party member (skip duplicates)
       if (enc.partyMembers.some(m => m.actorId === actor.id)) {
         ui.notifications.warn(`${actor.name} is already in the party.`);
@@ -251,12 +335,14 @@ export class EncounterBuilder extends Application {
         name: actor.name,
         isAlly: actor.type !== "character"
       });
+      ui.notifications.info(`Added ${actor.name} to party.`);
 
-    } else if (targetPanel?.classList.contains("ea-threats-panel")) {
-      // Add as threat (allow duplicates by bumping quantity)
+    } else if (isThreatDrop) {
+      // Add as threat (bump quantity if already present)
       const existing = enc.threats.find(t => t.actorId === actor.id);
       if (existing) {
         existing.quantity = (existing.quantity ?? 1) + 1;
+        ui.notifications.info(`${actor.name} quantity increased to ${existing.quantity}.`);
       } else {
         enc.threats.push({
           actorId: actor.id,
@@ -264,7 +350,11 @@ export class EncounterBuilder extends Application {
           quantity: 1,
           hasLairActions: false
         });
+        ui.notifications.info(`Added ${actor.name} to threats.`);
       }
+    } else {
+      console.warn("Encounter Architect | Drop landed outside recognized panels");
+      return;
     }
 
     await this._saveEncounter(enc);
@@ -273,8 +363,8 @@ export class EncounterBuilder extends Application {
 
   /* ── Monster Search (inline) ───────────────────────────────────────── */
 
-  _openMonsterSearch(html) {
-    // Simple prompt-based search for now; Phase 4 adds the full browser
+  _openMonsterSearch(_html) {
+    const builder = this;
     new Dialog({
       title: "Add Monster",
       content: `
@@ -290,7 +380,7 @@ export class EncounterBuilder extends Application {
           label: "Search",
           callback: (dialogHtml) => {
             const query = dialogHtml.find("[name=query]").val().toLowerCase();
-            this._performMonsterSearch(query);
+            builder._performMonsterSearch(query);
           }
         }
       },
@@ -312,8 +402,11 @@ export class EncounterBuilder extends Application {
     }
 
     // Let the DM pick from results
-    const options = results.slice(0, 20).map(a => `<option value="${a.id}">${a.name} (CR ${a.system?.details?.cr ?? "?"})</option>`).join("");
+    const options = results.slice(0, 20).map(
+      a => `<option value="${a.id}">${a.name} (CR ${a.system?.details?.cr ?? "?"})</option>`
+    ).join("");
 
+    const builder = this;
     new Dialog({
       title: "Select Monster",
       content: `
@@ -337,7 +430,7 @@ export class EncounterBuilder extends Application {
             const actor = game.actors.get(actorId);
             if (!actor) return;
 
-            const enc = foundry.utils.deepClone(this._encounter);
+            const enc = foundry.utils.deepClone(builder._encounter);
             const existing = enc.threats.find(t => t.actorId === actorId);
             if (existing) {
               existing.quantity += qty;
@@ -349,8 +442,8 @@ export class EncounterBuilder extends Application {
                 hasLairActions: false
               });
             }
-            await this._saveEncounter(enc);
-            this.render();
+            await builder._saveEncounter(enc);
+            builder.render();
           }
         }
       },
@@ -382,6 +475,7 @@ export class EncounterBuilder extends Application {
 
   async _editNotes() {
     const enc = this._encounter;
+    const builder = this;
     new Dialog({
       title: "Encounter Notes",
       content: `<textarea name="notes" style="width:100%;height:200px">${enc.notes ?? ""}</textarea>`,
@@ -391,7 +485,7 @@ export class EncounterBuilder extends Application {
           callback: async (html) => {
             const updated = foundry.utils.deepClone(enc);
             updated.notes = html.find("[name=notes]").val();
-            await this._saveEncounter(updated);
+            await builder._saveEncounter(updated);
           }
         }
       },
@@ -403,7 +497,6 @@ export class EncounterBuilder extends Application {
     const enc = this._encounter;
     if (!enc) return;
     const data = JSON.stringify(enc, null, 2);
-    const blob = new Blob([data], { type: "application/json" });
     const filename = `${enc.name.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}.json`;
     saveDataToFile(data, "application/json", filename);
     ui.notifications.info(`Exported: ${filename}`);

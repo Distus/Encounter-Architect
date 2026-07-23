@@ -20,18 +20,18 @@
   <div class="ea-panels">
 
     {{!-- LEFT: Party Panel --}}
-    <div class="ea-panel ea-party-panel">
+    <div class="ea-panel ea-party-panel ea-party-drop-zone">
       <h3><i class="fas fa-users"></i> Party</h3>
 
       {{!-- Resource State Selector --}}
       <div class="ea-resource-selector">
         <label>Resource State</label>
         <select class="ea-resource-state">
-          <option value="1.0"  {{#if (eq resourceState 1)}}selected{{/if}}>Fresh (100%)</option>
-          <option value="0.75" {{#if (eq resourceState 0.75)}}selected{{/if}}>Lightly Taxed (75%)</option>
-          <option value="0.5"  {{#if (eq resourceState 0.5)}}selected{{/if}}>Half Spent (50%)</option>
-          <option value="0.25" {{#if (eq resourceState 0.25)}}selected{{/if}}>Running on Fumes (25%)</option>
-          <option value="0.1"  {{#if (eq resourceState 0.1)}}selected{{/if}}>Critical (10%)</option>
+          <option value="1.0"  {{#if rsFresh}}selected{{/if}}>Fresh (100%)</option>
+          <option value="0.75" {{#if rsLightlyTaxed}}selected{{/if}}>Lightly Taxed (75%)</option>
+          <option value="0.5"  {{#if rsHalfSpent}}selected{{/if}}>Half Spent (50%)</option>
+          <option value="0.25" {{#if rsFumes}}selected{{/if}}>Running on Fumes (25%)</option>
+          <option value="0.1"  {{#if rsCritical}}selected{{/if}}>Critical (10%)</option>
         </select>
       </div>
 
@@ -47,18 +47,14 @@
             </div>
           </div>
           <div class="ea-detail ea-hidden">
-            <div class="ea-detail-row"><strong>Classes:</strong>
-              {{#each this.classes}}{{@key}} {{this}}{{#unless @last}}, {{/unless}}{{/each}}
-            </div>
-            <div class="ea-detail-row"><strong>DPR:</strong> ~{{this.damageCapabilities.estimatedDPR}}</div>
-            <div class="ea-detail-row"><strong>Damage Types:</strong>
-              {{#each this.damageCapabilities.primaryTypes}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
-            </div>
+            <div class="ea-detail-row"><strong>Classes:</strong> {{this.classDisplay}}</div>
+            <div class="ea-detail-row"><strong>DPR:</strong> ~{{this.dprDisplay}}</div>
+            <div class="ea-detail-row"><strong>Damage Types:</strong> {{this.dmgTypeDisplay}}</div>
             {{#if this.healingCapability}}
             <div class="ea-detail-row"><strong>Healing:</strong> ~{{this.healingCapability}}</div>
             {{/if}}
             <div class="ea-detail-row"><strong>Tags:</strong>
-              {{#each this.threatTags}}<span class="ea-tag ea-tag-small">{{this}}</span>{{/each}}
+              {{#each this.displayTags}}<span class="ea-tag ea-tag-small">{{this}}</span> {{/each}}
             </div>
           </div>
         </div>
@@ -67,7 +63,7 @@
 
       <div class="ea-drop-hint">Drag characters here from the Actors sidebar</div>
 
-      {{#if analysis.partySummary}}
+      {{#if hasAnalysis}}
       <div class="ea-panel-summary">
         <strong>Party:</strong> {{analysis.partySummary.count}} members ·
         {{analysis.partySummary.totalHP}} HP ·
@@ -81,11 +77,11 @@
     <div class="ea-panel ea-analysis-panel">
       <h3><i class="fas fa-chart-bar"></i> Analysis</h3>
 
-      {{#if analysis}}
+      {{#if hasAnalysis}}
       {{!-- Difficulty Gauge --}}
       <div class="ea-difficulty-gauge">
         <div class="ea-difficulty-label" style="color: {{difficultyColor}}">
-          {{analysis.resourceAdjustedDifficulty}}
+          {{finalDifficulty}}
         </div>
         {{#if showXP}}
         <div class="ea-xp-display">
@@ -98,17 +94,15 @@
           </div>
         </div>
         {{/if}}
-        {{#unless (eq analysis.xpDifficulty analysis.resourceAdjustedDifficulty)}}
+        {{#if difficultyChanged}}
         <div class="ea-difficulty-note">
-          Raw: {{analysis.xpDifficulty}}
-          {{#if analysis.adjustedDifficulty}}→ Adjusted: {{analysis.adjustedDifficulty}}{{/if}}
-          → With resources: {{analysis.resourceAdjustedDifficulty}}
+          Raw: {{rawDifficulty}} → Adjusted: {{adjustedDifficulty}} → With resources: {{finalDifficulty}}
         </div>
-        {{/unless}}
+        {{/if}}
       </div>
 
       {{!-- Action Economy --}}
-      {{#if analysis.partyActions}}
+      {{#if hasActionEconomy}}
       <div class="ea-action-economy">
         <div class="ea-section-title">Action Economy</div>
         <div class="ea-action-bars">
@@ -116,14 +110,11 @@
           <div>Enemies: <strong>{{analysis.enemyActions}}</strong> actions/round</div>
         </div>
         <div class="ea-verdict">{{analysis.actionEconomyVerdict}}</div>
-        {{#unless (eq analysis.difficultyAdjustment 0)}}
-        <div class="ea-adjustment">Difficulty adjusted {{analysis.difficultyAdjustment}} step(s)</div>
-        {{/unless}}
       </div>
       {{/if}}
 
       {{!-- Round Estimate --}}
-      {{#if analysis.estimatedRounds}}
+      {{#if hasRounds}}
       <div class="ea-round-estimate">
         <div class="ea-section-title">Estimated Duration</div>
         <div class="ea-round-display">
@@ -141,21 +132,21 @@
       {{/if}}
 
       {{!-- Quick Stats --}}
-      {{#if analysis.quickStats}}
+      {{#if hasQuickStats}}
       <div class="ea-quick-stats">
         <div class="ea-section-title">Quick Stats</div>
-        <div class="ea-stat-row">Party Avg AC: {{analysis.quickStats.partyAvgAC}} · Enemy Avg AC: {{analysis.quickStats.enemyAvgAC}}</div>
-        <div class="ea-stat-row">Party DPR: ~{{analysis.quickStats.partyDPR}} · Enemy DPR: ~{{analysis.quickStats.enemyDPR}}</div>
+        <div class="ea-stat-row">Party Avg AC: {{quickStats.partyAvgAC}} · Enemy Avg AC: {{quickStats.enemyAvgAC}}</div>
+        <div class="ea-stat-row">Party DPR: ~{{quickStats.partyDPR}} · Enemy DPR: ~{{quickStats.enemyDPR}}</div>
       </div>
       {{/if}}
 
       {{!-- Warnings --}}
-      {{#if analysis.warnings.length}}
+      {{#if hasWarnings}}
       <div class="ea-warnings">
         <div class="ea-section-title">Tactical Warnings</div>
-        {{#each analysis.warnings}}
+        {{#each warnings}}
         <div class="ea-warning ea-warning-{{this.severity}}">
-          <i class="fas {{#if (eq this.severity 'danger')}}fa-exclamation-triangle{{else if (eq this.severity 'caution')}}fa-exclamation-circle{{else}}fa-info-circle{{/if}}"></i>
+          <i class="fas {{this.iconClass}}"></i>
           <span class="ea-warning-text">{{this.message}}</span>
         </div>
         {{/each}}
@@ -165,14 +156,14 @@
     </div>
 
     {{!-- RIGHT: Threats Panel --}}
-    <div class="ea-panel ea-threats-panel">
+    <div class="ea-panel ea-threats-panel ea-threats-drop-zone">
       <h3><i class="fas fa-skull-crossbones"></i> Threats</h3>
 
       <button class="ea-add-monster"><i class="fas fa-plus"></i> Add Monster</button>
 
       <div class="ea-creature-list">
         {{#each threats}}
-        <div class="ea-creature-card" data-threat-idx="{{@index}}">
+        <div class="ea-creature-card" data-threat-idx="{{this.idx}}">
           <div class="ea-creature-header">
             <span class="ea-creature-name">{{this.name}}</span>
             <span class="ea-creature-stats">
@@ -188,7 +179,10 @@
             </div>
           </div>
           <div class="ea-detail ea-hidden">
-            {{!-- Details populated from live threat data --}}
+            <div class="ea-detail-row"><strong>AC:</strong> {{this.ac}} · <strong>HP:</strong> {{this.hp}}</div>
+            <div class="ea-detail-row"><strong>Tags:</strong>
+              {{#each this.displayTags}}<span class="ea-tag ea-tag-small">{{this}}</span> {{/each}}
+            </div>
           </div>
         </div>
         {{/each}}
@@ -196,7 +190,7 @@
 
       <div class="ea-drop-hint">Drag monsters here from the Actors sidebar</div>
 
-      {{#if analysis.threatSummary}}
+      {{#if hasAnalysis}}
       <div class="ea-panel-summary">
         <strong>Threats:</strong> {{analysis.threatSummary.count}} creatures ·
         {{analysis.threatSummary.totalHP}} HP ·
