@@ -153,7 +153,7 @@ function estimateItemDamage(item, actor) {
       if (partsArray.length > 0) {
         for (const part of partsArray) {
           try {
-            const formula = Array.isArray(part) ? part[0] : (part?.formula ?? part?.number ? `${part.number}d${part.denomination ?? 6}` : "");
+            const formula = Array.isArray(part) ? part[0] : ((part?.formula) ?? (part?.number ? `${part.number}d${part.denomination ?? 6}` : ""));
             const type    = Array.isArray(part) ? part[1] : (part?.type ?? part?.damageType ?? "");
             avg += estimateFormula(formula, actor);
             if (type) types.push(typeof type === "string" ? type : "");
@@ -276,8 +276,8 @@ export function readPartyMember(actor, isAlly = false) {
     } catch { /* skip */ }
   }
 
-  const level = dig(sys, "details.level", 0) ??
-                Object.values(classes).reduce((a, b) => a + b, 0) || 1;
+  const level = (dig(sys, "details.level", 0) ??
+                Object.values(classes).reduce((a, b) => a + b, 0)) || 1;
 
   let dmgProfile = { estimatedDPR: 0, burstDamage: 0, primaryTypes: [] };
   try { dmgProfile = estimateDPR(actor); }
